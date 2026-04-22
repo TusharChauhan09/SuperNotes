@@ -14,12 +14,20 @@ export default function Home() {
           Live study rooms with video, voice, and chat. Join a club and hop
           into a session.
         </p>
-        <Link
-          href="/clubs"
-          className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-6 py-3 text-base font-medium text-white transition hover:bg-emerald-700"
-        >
-          Enter app
-        </Link>
+        <div className="flex flex-wrap justify-center gap-3">
+          <Link
+            href="/clubs"
+            className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-6 py-3 text-base font-medium text-white transition hover:bg-emerald-700"
+          >
+            Enter clubs
+          </Link>
+          <Link
+            href="/notes"
+            className="inline-flex items-center justify-center rounded-full border border-neutral-300 bg-white px-6 py-3 text-base font-medium text-neutral-800 transition hover:border-emerald-500 hover:text-emerald-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:text-emerald-300"
+          >
+            Open notes
+          </Link>
+        </div>
       </div>
     </main>
   );
