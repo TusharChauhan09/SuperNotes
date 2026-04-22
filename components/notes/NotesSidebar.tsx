@@ -29,6 +29,7 @@ export function NotesSidebar() {
   const updateFolder = useUpdateFolder();
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
+  const [search, setSearch] = useState("");
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
@@ -64,26 +65,49 @@ export function NotesSidebar() {
   };
 
   return (
-    <aside className="flex w-72 shrink-0 flex-col border-r border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-950/40">
-      <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
-        <Link
-          href="/"
-          className="text-xs font-medium uppercase tracking-[0.18em] text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
-        >
-          Notes
-        </Link>
-        <button
-          type="button"
-          onClick={() => setCreating((v) => !v)}
-          className="rounded-md px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100 dark:text-emerald-300 dark:hover:bg-emerald-900/30"
-        >
-          + Folder
-        </button>
+    <aside className="flex w-60 shrink-0 flex-col overflow-hidden border-r border-[rgba(16,185,129,0.07)] bg-[#0e1010]">
+      <div className="border-b border-[rgba(16,185,129,0.07)] px-3 py-2.5">
+        <div className="mb-2 flex items-center justify-between">
+          <Link
+            href="/"
+            className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#4a5c54] transition hover:text-[#8a9e94]"
+          >
+            Vault
+          </Link>
+          <button
+            type="button"
+            onClick={() => setCreating((v) => !v)}
+            className="rounded px-1.5 py-0.5 text-[11px] font-medium text-[#4a5c54] transition hover:bg-[#1a1d1c] hover:text-[#8a9e94]"
+          >
+            + Folder
+          </button>
+        </div>
+        <div className="flex items-center gap-2 rounded-md border border-[rgba(16,185,129,0.07)] bg-[#141616] px-2.5 py-1.5">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-[#4a5c54]"
+          >
+            <path d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
+          </svg>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search…"
+            className="w-full bg-transparent text-xs text-[#e6ede9] outline-none placeholder:text-[#4a5c54]"
+          />
+        </div>
       </div>
 
       {creating && (
         <form
-          className="border-b border-neutral-200 px-3 py-2 dark:border-neutral-800"
+          className="border-b border-[rgba(16,185,129,0.07)] px-3 py-2"
           onSubmit={(e) => {
             e.preventDefault();
             const name = newName.trim();
@@ -107,28 +131,32 @@ export function NotesSidebar() {
               if (!newName.trim()) setCreating(false);
             }}
             placeholder="Folder name"
-            className="w-full rounded-md border border-neutral-300 bg-white px-2 py-1 text-sm outline-none focus:border-emerald-500 dark:border-neutral-700 dark:bg-neutral-900"
+            className="w-full rounded-md border border-[rgba(16,185,129,0.2)] bg-[#141616] px-2 py-1 text-sm text-[#e6ede9] outline-none placeholder:text-[#4a5c54] focus:border-emerald-600"
           />
         </form>
       )}
 
-      <div className="flex-1 overflow-y-auto px-2 py-2 text-sm">
+      <div className="flex-1 overflow-y-auto px-1 py-1.5 text-sm">
         {isLoading && (
-          <p className="px-2 py-3 text-xs text-neutral-500">Loading…</p>
+          <p className="px-2 py-3 text-xs text-[#4a5c54]">Loading…</p>
         )}
         {isError && (
-          <p className="px-2 py-3 text-xs text-red-500">
+          <p className="px-2 py-3 text-xs text-red-400">
             Failed to load folders
           </p>
         )}
         {tree && tree.length === 0 && (
-          <p className="px-2 py-3 text-xs text-neutral-500">
+          <p className="px-2 py-3 text-xs text-[#4a5c54]">
             No folders yet. Create one above.
           </p>
         )}
         {tree && tree.length > 0 && (
           <DndContext sensors={sensors} onDragEnd={onDragEnd}>
-            <FolderTree nodes={tree as FolderNode[]} depth={0} />
+            <FolderTree
+              nodes={tree as FolderNode[]}
+              depth={0}
+              search={search}
+            />
           </DndContext>
         )}
       </div>

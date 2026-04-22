@@ -2,28 +2,36 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className="flex flex-1 items-center justify-center px-6">
+    <main className="relative flex flex-1 items-center justify-center px-6">
       <div className="max-w-2xl text-center">
-        <p className="mb-4 text-sm uppercase tracking-[0.3em] text-emerald-600">
+        <div
+          className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-lg border border-[rgba(16,185,129,0.14)]"
+          style={{ background: "#0e1010" }}
+        >
+          <span className="text-xl font-extrabold tracking-tighter text-emerald-400">
+            S
+          </span>
+        </div>
+        <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.3em] text-[#4a5c54]">
           SuperStudy
         </p>
-        <h1 className="mb-6 text-5xl font-semibold tracking-tight sm:text-6xl">
+        <h1 className="mb-6 text-5xl font-bold tracking-tight text-[#e6ede9] sm:text-6xl">
           Study together.
         </h1>
-        <p className="mb-10 text-lg text-neutral-600 dark:text-neutral-300">
+        <p className="mb-10 text-base text-[#8a9e94]">
           Live study rooms with video, voice, and chat. Join a club and hop
           into a session.
         </p>
         <div className="flex flex-wrap justify-center gap-3">
           <Link
             href="/clubs"
-            className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-6 py-3 text-base font-medium text-white transition hover:bg-emerald-700"
+            className="inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
           >
             Enter clubs
           </Link>
           <Link
             href="/notes"
-            className="inline-flex items-center justify-center rounded-full border border-neutral-300 bg-white px-6 py-3 text-base font-medium text-neutral-800 transition hover:border-emerald-500 hover:text-emerald-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:text-emerald-300"
+            className="inline-flex items-center justify-center rounded-md border border-[rgba(16,185,129,0.14)] bg-[#0e1010] px-5 py-2.5 text-sm font-medium text-[#c8d8d2] transition hover:bg-[#141616] hover:text-[#e6ede9]"
           >
             Open notes
           </Link>

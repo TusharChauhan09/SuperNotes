@@ -90,15 +90,16 @@ export function RoomClient({
   if (!token || !choices) {
     return (
       <div
-        className="flex flex-1 items-center justify-center bg-neutral-950 p-6"
+        className="relative flex flex-1 items-center justify-center bg-[#060808] p-6"
         data-lk-theme="default"
       >
         <div className="w-full max-w-md">
-          <div className="mb-4 text-center text-sm text-neutral-300">
-            Join <span className="font-medium text-white">“{roomName}”</span>
+          <div className="mb-4 text-center text-sm text-[#8a9e94]">
+            Join{" "}
+            <span className="font-semibold text-[#e6ede9]">“{roomName}”</span>
           </div>
           {error && (
-            <div className="mb-4 rounded-xl border border-red-800/40 bg-red-900/20 p-3 text-sm text-red-200">
+            <div className="mb-4 rounded-lg border border-red-800/40 bg-red-900/20 p-3 text-sm text-red-200">
               {error}
             </div>
           )}
@@ -119,7 +120,7 @@ export function RoomClient({
 
   return (
     <div className="flex flex-1 overflow-hidden">
-      <div className="flex-1 bg-neutral-950" data-lk-theme="default">
+      <div className="flex-1 bg-[#060808]" data-lk-theme="default">
         <LiveKitRoom
           key={token.token}
           serverUrl={token.url}
@@ -134,7 +135,7 @@ export function RoomClient({
           <VideoConference />
         </LiveKitRoom>
       </div>
-      <aside className="hidden w-80 shrink-0 border-l border-neutral-200 bg-white md:flex md:flex-col dark:border-neutral-800 dark:bg-neutral-900">
+      <aside className="hidden w-80 shrink-0 border-l border-[rgba(16,185,129,0.07)] bg-[#0e1010] md:flex md:flex-col">
         <ChatPanel
           roomId={roomId}
           userId={token.identity}

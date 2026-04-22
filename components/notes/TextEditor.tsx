@@ -42,8 +42,8 @@ export function TextEditor({
       editorProps: {
         attributes: {
           class: cn(
-            "prose prose-neutral max-w-none focus:outline-none dark:prose-invert",
-            "min-h-[60vh] px-8 py-6"
+            "prose-editor max-w-[var(--layout-editor-max)] mx-auto focus:outline-none",
+            "min-h-[60vh] px-12 py-10"
           ),
         },
       },
@@ -86,10 +86,10 @@ function Toolbar({ editor }: { editor: Editor }) {
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "rounded px-2 py-1 text-xs font-medium",
+        "rounded px-2 py-1 text-[11px] font-medium transition",
         active
-          ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
-          : "text-neutral-700 hover:bg-neutral-200 dark:text-neutral-200 dark:hover:bg-neutral-800",
+          ? "bg-[rgba(16,185,129,0.1)] text-emerald-300"
+          : "text-[#8a9e94] hover:bg-[#1a1d1c] hover:text-[#c8d8d2]",
         disabled && "opacity-40"
       )}
     >
@@ -103,23 +103,20 @@ function Toolbar({ editor }: { editor: Editor }) {
   };
 
   return (
-    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-1 border-b border-neutral-200 bg-white/80 px-6 py-2 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/80">
-      {btn(
-        "H1",
-        editor.isActive("heading", { level: 1 }),
-        () => editor.chain().focus().toggleHeading({ level: 1 }).run()
+    <div
+      className="sticky top-0 z-10 flex flex-wrap items-center gap-1 border-b border-[rgba(16,185,129,0.07)] px-6 py-2 backdrop-blur"
+      style={{ background: "rgba(14,16,16,0.85)" }}
+    >
+      {btn("H1", editor.isActive("heading", { level: 1 }), () =>
+        editor.chain().focus().toggleHeading({ level: 1 }).run()
       )}
-      {btn(
-        "H2",
-        editor.isActive("heading", { level: 2 }),
-        () => editor.chain().focus().toggleHeading({ level: 2 }).run()
+      {btn("H2", editor.isActive("heading", { level: 2 }), () =>
+        editor.chain().focus().toggleHeading({ level: 2 }).run()
       )}
-      {btn(
-        "H3",
-        editor.isActive("heading", { level: 3 }),
-        () => editor.chain().focus().toggleHeading({ level: 3 }).run()
+      {btn("H3", editor.isActive("heading", { level: 3 }), () =>
+        editor.chain().focus().toggleHeading({ level: 3 }).run()
       )}
-      <span className="mx-1 h-4 w-px bg-neutral-300 dark:bg-neutral-700" />
+      <span className="mx-1 h-4 w-px bg-[rgba(16,185,129,0.07)]" />
       {btn("B", editor.isActive("bold"), () =>
         editor.chain().focus().toggleBold().run()
       )}
@@ -129,7 +126,7 @@ function Toolbar({ editor }: { editor: Editor }) {
       {btn("`", editor.isActive("code"), () =>
         editor.chain().focus().toggleCode().run()
       )}
-      <span className="mx-1 h-4 w-px bg-neutral-300 dark:bg-neutral-700" />
+      <span className="mx-1 h-4 w-px bg-[rgba(16,185,129,0.07)]" />
       {btn("• List", editor.isActive("bulletList"), () =>
         editor.chain().focus().toggleBulletList().run()
       )}
@@ -142,7 +139,7 @@ function Toolbar({ editor }: { editor: Editor }) {
       {btn("Quote", editor.isActive("blockquote"), () =>
         editor.chain().focus().toggleBlockquote().run()
       )}
-      <span className="mx-1 h-4 w-px bg-neutral-300 dark:bg-neutral-700" />
+      <span className="mx-1 h-4 w-px bg-[rgba(16,185,129,0.07)]" />
       {btn("Image", false, insertImage)}
       {btn("Table", false, () =>
         editor

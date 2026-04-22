@@ -19,52 +19,65 @@ export default async function ClubPage({
       <div className="mb-8">
         <Link
           href="/clubs"
-          className="text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100"
+          className="text-sm text-[#4a5c54] transition hover:text-[#c8d8d2]"
         >
           ← All clubs
         </Link>
       </div>
 
       <div className="mb-10 flex items-start gap-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 text-2xl font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+        <div className="flex h-14 w-14 items-center justify-center rounded-lg border border-[rgba(16,185,129,0.1)] bg-[#0e1010] text-xl font-bold text-emerald-400">
           {club.name.charAt(0)}
         </div>
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">{club.name}</h1>
-          <p className="mt-1 text-neutral-600 dark:text-neutral-300">
-            {club.description}
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-[#e6ede9]">
+            {club.name}
+          </h1>
+          <p className="mt-1 text-[#8a9e94]">{club.description}</p>
         </div>
       </div>
 
       <section className="mb-10">
-        <h2 className="mb-4 text-lg font-semibold">Start a new room</h2>
+        <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#4a5c54]">
+          Start a new room
+        </h2>
         <CreateRoomForm clubId={club.id} />
       </section>
 
       <section>
-        <h2 className="mb-4 text-lg font-semibold">Live rooms</h2>
+        <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#4a5c54]">
+          Live rooms
+        </h2>
         {rooms.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-500 dark:border-neutral-700">
+          <p className="rounded-lg border border-dashed border-[rgba(16,185,129,0.1)] bg-[#0e1010] p-8 text-center text-sm text-[#4a5c54]">
             No rooms yet — start one above.
           </p>
         ) : (
-          <ul className="grid gap-3 sm:grid-cols-2">
+          <ul className="grid gap-2 sm:grid-cols-2">
             {rooms.map((room) => (
               <li key={room.id}>
                 <Link
                   href={`/clubs/${club.id}/room/${room.id}`}
-                  className="block rounded-xl border border-neutral-200 bg-white p-4 transition hover:border-emerald-500 hover:shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+                  className="block rounded-lg border border-[rgba(16,185,129,0.07)] bg-[#0e1010] p-4 transition hover:border-[rgba(16,185,129,0.18)] hover:bg-[#141616]"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-medium">{room.name}</p>
-                      <p className="mt-1 text-xs text-neutral-500">
+                      <p className="text-sm font-medium text-[#e6ede9]">
+                        {room.name}
+                      </p>
+                      <p className="mt-1 text-[11px] text-[#4a5c54]">
                         Hosted by {room.hostName}
                       </p>
                     </div>
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+                      style={{
+                        background: "rgba(239,68,68,0.12)",
+                        color: "#f87171",
+                        border: "1px solid rgba(239,68,68,0.25)",
+                      }}
+                    >
+                      <span className="h-1 w-1 rounded-full bg-red-400" />
                       Live
                     </span>
                   </div>

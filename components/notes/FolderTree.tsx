@@ -23,9 +23,11 @@ type MenuState =
 export function FolderTree({
   nodes,
   depth,
+  search = "",
 }: {
   nodes: FolderNode[];
   depth: number;
+  search?: string;
 }) {
   const [menu, setMenu] = useState<MenuState>(null);
 
@@ -38,6 +40,7 @@ export function FolderTree({
             node={node}
             depth={depth}
             onMenu={setMenu}
+            search={search}
           />
         ))}
       </ul>
@@ -50,10 +53,12 @@ function FolderRow({
   node,
   depth,
   onMenu,
+  search,
 }: {
   node: FolderNode;
   depth: number;
   onMenu: (m: MenuState) => void;
+  search: string;
 }) {
   const [open, setOpen] = useState(depth === 0);
   const [renaming, setRenaming] = useState(false);
@@ -74,6 +79,12 @@ function FolderRow({
     setDragRef(el);
   };
 
+  const visibleNotes = search
+    ? node.notes.filter((n) =>
+        n.title.toLowerCase().includes(search.toLowerCase())
+      )
+    : node.notes;
+
   return (
     <li>
       <div
@@ -85,21 +96,44 @@ function FolderRow({
           onMenu({ kind: "folder", id: node.id, x: e.clientX, y: e.clientY });
         }}
         className={cn(
-          "group flex cursor-pointer select-none items-center gap-1 rounded-md px-2 py-1 text-sm text-neutral-800 hover:bg-neutral-200/60 dark:text-neutral-100 dark:hover:bg-neutral-800/60",
-          isOver &&
-            "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200"
+          "group flex cursor-pointer select-none items-center gap-1.5 rounded px-2 py-[3px] text-[12.5px] text-[#8a9e94] transition hover:bg-[#1a1d1c] hover:text-[#c8d8d2]",
+          isOver && "bg-[#1a1d1c] ring-1 ring-[rgba(16,185,129,0.25)]"
         )}
-        style={{ paddingLeft: 8 + depth * 12 }}
+        style={{ paddingLeft: 8 + depth * 14 }}
         onClick={() => setOpen((v) => !v)}
       >
-        <span
+        <svg
+          width="11"
+          height="11"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
           className={cn(
-            "inline-block w-3 text-xs text-neutral-400 transition-transform",
-            open ? "rotate-90" : ""
+            "shrink-0 text-[#4a5c54] transition-transform",
+            open && "rotate-90"
           )}
         >
-          ▸
-        </span>
+          <path d="M9 18l6-6-6-6" />
+        </svg>
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={cn(
+            "shrink-0",
+            open ? "text-emerald-500/70" : "text-[#4a5c54]"
+          )}
+        >
+          <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
+        </svg>
         {renaming ? (
           <input
             autoFocus
@@ -122,7 +156,7 @@ function FolderRow({
                 setRenaming(false);
               }
             }}
-            className="flex-1 rounded border border-emerald-400 bg-white px-1 py-0 text-sm outline-none dark:bg-neutral-900"
+            className="flex-1 rounded border border-emerald-600/50 bg-[#141616] px-1 py-0 text-sm text-[#e6ede9] outline-none"
           />
         ) : (
           <span
@@ -146,7 +180,7 @@ function FolderRow({
               y: e.clientY,
             });
           }}
-          className="hidden rounded px-1 text-neutral-400 hover:bg-neutral-300 group-hover:inline dark:hover:bg-neutral-700"
+          className="hidden rounded px-1 text-[#4a5c54] hover:bg-[#202424] hover:text-[#c8d8d2] group-hover:inline"
           aria-label="Folder menu"
         >
           ⋯
@@ -154,7 +188,7 @@ function FolderRow({
       </div>
 
       <AnimatePresence initial={false}>
-        {open && (node.children.length > 0 || node.notes.length > 0) && (
+        {open && (node.children.length > 0 || visibleNotes.length > 0) && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
@@ -169,9 +203,10 @@ function FolderRow({
                   node={child}
                   depth={depth + 1}
                   onMenu={onMenu}
+                  search={search}
                 />
               ))}
-              {node.notes.map((n) => (
+              {visibleNotes.map((n) => (
                 <NoteRow
                   key={n.id}
                   id={n.id}
@@ -224,15 +259,32 @@ function NoteRow({
           onMenu({ kind: "note", id, folderId, x: e.clientX, y: e.clientY });
         }}
         className={cn(
-          "group flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-neutral-600 hover:bg-neutral-200/60 dark:text-neutral-300 dark:hover:bg-neutral-800/60",
+          "group flex items-center gap-1.5 rounded px-2 py-[3px] text-[12.5px] text-[#8a9e94] transition hover:bg-[#1a1d1c] hover:text-[#c8d8d2]",
           active &&
-            "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200"
+            "border-l-2 border-emerald-600 bg-[rgba(16,185,129,0.08)] text-emerald-300"
         )}
-        style={{ paddingLeft: 8 + depth * 12 + 16 }}
+        style={{ paddingLeft: 8 + depth * 14 + 16 }}
       >
-        <span className="w-3 text-xs text-neutral-400">
-          {type === "CANVAS" ? "✎" : "▤"}
-        </span>
+        <svg
+          width="11"
+          height="11"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={cn(
+            "shrink-0",
+            active ? "text-emerald-500" : "text-[#4a5c54]"
+          )}
+        >
+          {type === "CANVAS" ? (
+            <path d="M15 4V2 M15 16v-2 M8 9h2 M20 9h2 M3 21l9-9 M12.2 6.2L11 5" />
+          ) : (
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z M14 2v6h6" />
+          )}
+        </svg>
         <span className="flex-1 truncate">{title}</span>
       </Link>
     </li>
@@ -252,7 +304,7 @@ function ContextMenu({
   const deleteFolder = useDeleteFolder();
   const deleteNote = useDeleteNote();
 
-  const items: Array<{ label: string; run: () => void }> =
+  const items: Array<{ label: string; run: () => void; danger?: boolean }> =
     menu.kind === "folder"
       ? [
           {
@@ -268,7 +320,11 @@ function ContextMenu({
             label: "New canvas note",
             run: () => {
               createNote.mutate(
-                { folderId: menu.id, type: "CANVAS", title: "Untitled canvas" },
+                {
+                  folderId: menu.id,
+                  type: "CANVAS",
+                  title: "Untitled canvas",
+                },
                 { onSuccess: (n) => router.push(`/notes/${n.id}`) }
               );
             },
@@ -284,6 +340,7 @@ function ContextMenu({
           },
           {
             label: "Delete folder",
+            danger: true,
             run: () => {
               if (confirm("Delete this folder and all its notes?")) {
                 deleteFolder.mutate(menu.id);
@@ -294,6 +351,7 @@ function ContextMenu({
       : [
           {
             label: "Delete note",
+            danger: true,
             run: () => {
               if (confirm("Delete this note?")) {
                 deleteNote.mutate(menu.id);
@@ -307,7 +365,7 @@ function ContextMenu({
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
       <ul
-        className="fixed z-50 min-w-44 rounded-lg border border-neutral-200 bg-white py-1 text-sm shadow-xl dark:border-neutral-700 dark:bg-neutral-900"
+        className="fixed z-50 min-w-44 rounded-lg border border-[rgba(16,185,129,0.14)] bg-[#141616] py-1 text-sm shadow-[0_8px_32px_rgba(0,0,0,0.7)]"
         style={{ left: menu.x, top: menu.y }}
       >
         {items.map((item) => (
@@ -318,7 +376,12 @@ function ContextMenu({
                 item.run();
                 onClose();
               }}
-              className="block w-full px-3 py-1.5 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              className={cn(
+                "block w-full px-3 py-1.5 text-left transition hover:bg-[#1a1d1c]",
+                item.danger
+                  ? "text-red-400 hover:text-red-300"
+                  : "text-[#e6ede9]"
+              )}
             >
               {item.label}
             </button>

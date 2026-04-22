@@ -7,7 +7,7 @@ import { TextEditor } from "./TextEditor";
 
 const CanvasEditor = dynamic(
   () => import("./CanvasEditor").then((m) => m.CanvasEditor),
-  { ssr: false, loading: () => <div className="p-6 text-sm">Loading canvas…</div> }
+  { ssr: false, loading: () => <div className="p-6 text-sm text-[#4a5c54]">Loading canvas…</div> }
 );
 
 export function NoteEditor({ noteId }: { noteId: string }) {
@@ -67,27 +67,33 @@ export function NoteEditor({ noteId }: { noteId: string }) {
   }, [update]);
 
   if (isLoading) {
-    return <div className="p-8 text-sm text-neutral-500">Loading…</div>;
+    return <div className="p-8 text-sm text-[#4a5c54]">Loading…</div>;
   }
   if (isError || !note) {
-    return (
-      <div className="p-8 text-sm text-red-500">Note not found.</div>
-    );
+    return <div className="p-8 text-sm text-red-400">Note not found.</div>;
   }
 
   return (
-    <div className="flex flex-1 min-h-0 flex-col">
-      <header className="flex items-center gap-3 border-b border-neutral-200 px-6 py-3 dark:border-neutral-800">
+    <div className="flex flex-1 min-h-0 flex-col bg-[#080909]">
+      <header className="flex items-center gap-3 border-b border-[rgba(16,185,129,0.07)] bg-[#0e1010]/80 px-6 py-3 backdrop-blur">
         <input
           value={title}
           onChange={(e) => {
             setTitle(e.target.value);
             saveTitle(e.target.value);
           }}
-          className="flex-1 bg-transparent text-xl font-semibold tracking-tight outline-none placeholder:text-neutral-400"
+          className="flex-1 bg-transparent text-xl font-bold tracking-tight text-[#e6ede9] outline-none placeholder:text-[#4a5c54]"
           placeholder="Untitled"
         />
-        <span className="text-xs text-neutral-500">
+        <span
+          className={
+            "flex items-center gap-1.5 font-mono text-[11px] " +
+            (status === "saved" ? "text-emerald-500" : "text-[#4a5c54]")
+          }
+        >
+          {status === "saved" && (
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          )}
           {status === "saving"
             ? "Saving…"
             : status === "saved"

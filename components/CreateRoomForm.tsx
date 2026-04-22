@@ -36,13 +36,16 @@ export function CreateRoomForm({ clubId }: { clubId: string }) {
     }
   }
 
+  const inputCls =
+    "rounded-md border border-[rgba(16,185,129,0.07)] bg-[#141616] px-3 py-2 text-sm text-[#e6ede9] outline-none placeholder:text-[#4a5c54] transition focus:border-emerald-600";
+
   return (
     <form
       onSubmit={onSubmit}
-      className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-4 sm:flex-row sm:items-end dark:border-neutral-800 dark:bg-neutral-900"
+      className="flex flex-col gap-3 rounded-lg border border-[rgba(16,185,129,0.07)] bg-[#0e1010] p-4 sm:flex-row sm:items-end"
     >
       <label className="flex flex-1 flex-col gap-1">
-        <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
+        <span className="text-[11px] font-medium uppercase tracking-wider text-[#4a5c54]">
           Room name
         </span>
         <input
@@ -51,11 +54,11 @@ export function CreateRoomForm({ clubId }: { clubId: string }) {
           placeholder="Calc study session"
           maxLength={80}
           required
-          className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 dark:border-neutral-700 dark:bg-neutral-950"
+          className={inputCls}
         />
       </label>
       <label className="flex flex-1 flex-col gap-1">
-        <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
+        <span className="text-[11px] font-medium uppercase tracking-wider text-[#4a5c54]">
           Your name
         </span>
         <input
@@ -64,17 +67,17 @@ export function CreateRoomForm({ clubId }: { clubId: string }) {
           placeholder="Tushar"
           maxLength={40}
           required
-          className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 dark:border-neutral-700 dark:bg-neutral-950"
+          className={inputCls}
         />
       </label>
       <button
         type="submit"
         disabled={submitting}
-        className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
+        className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
       >
         {submitting ? "Creating…" : "Start room"}
       </button>
-      {error && <p className="text-sm text-red-600 sm:ml-2">{error}</p>}
+      {error && <p className="text-sm text-red-400 sm:ml-2">{error}</p>}
     </form>
   );
 }

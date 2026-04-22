@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SuperStudy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #root { height: 100%; }
+body { font-family: 'Geist', sans-serif; overflow: hidden; background: #080909; color: #c8d8d2; }
+
+/* Obsidian-style scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.15); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(16,185,129,0.3); }
+
+/* Prose editor styles */
+.prose-editor { font-size: 16px; line-height: 1.8; color: #b8cec4; }
+.prose-editor h1 { font-size: 2em; font-weight: 700; letter-spacing: -0.025em; margin: 0 0 .5em; color: #e0e8e4; }
+.prose-editor h2 { font-size: 1.4em; font-weight: 600; margin: 1.6em 0 .5em; color: #ccd9d4; letter-spacing: -0.01em; }
+.prose-editor h3 { font-size: 1.15em; font-weight: 600; margin: 1.4em 0 .4em; color: #b8cec4; }
+.prose-editor p  { margin: 0 0 1em; }
+.prose-editor ul { padding-left: 1.4em; margin: 0 0 1em; }
+.prose-editor li { margin-bottom: .3em; }
+.prose-editor code { font-family:'Geist Mono',monospace; font-size:.85em; background:rgba(16,185,129,0.07); border:1px solid rgba(16,185,129,0.12); border-radius:4px; padding:1px 5px; color:#6ee7b7; }
+.prose-editor pre  { font-family:'Geist Mono',monospace; font-size:.85em; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:8px; padding:16px; color:#a3b8b0; overflow-x:auto; margin:0 0 1em; line-height:1.65; }
+.prose-editor blockquote { border-left:3px solid rgba(16,185,129,0.3); padding-left:1em; color:#6a8a7e; margin:0 0 1em; }
+.prose-editor strong { color: #ddeae4; font-weight: 600; }
+.prose-editor a { color: #34d399; text-decoration: none; border-bottom: 1px solid rgba(52,211,153,0.25); }
+.prose-editor hr { border: none; border-top: 1px solid rgba(16,185,129,0.12); margin: 1.5em 0; }
+
+/* Tag chip */
+.tag { display:inline-block; font-size:11px; color:#34d399; background:rgba(52,211,153,0.1); border:1px solid rgba(52,211,153,0.2); border-radius:99px; padding:1px 8px; margin:0 2px 2px 0; cursor:pointer; }
+.tag:hover { background:rgba(52,211,153,0.18); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useEffect, useCallback } = React;
+
+/* ─── Tweaks defaults ─── */
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accentOpacity": 8,
+  "gradientBloom": 5,
+  "fontSize": 15,
+  "sidebarWidth": 196
+}/*EDITMODE-END*/;
+
+/* ─── Tweaks panel ─── */
+function TweaksPanel({ tweaks, setTweaks }) {
+  const row = (label, key, min, max, step=1, unit='') => (
+    <div style={{ marginBottom:14 }}>
+      <div style={{ display:'flex', justifyContent:'space-between', marginBottom:5 }}>
+        <span style={{ fontSize:11, color:'#8a9e94' }}>{label}</span>
+        <span style={{ fontSize:11, fontFamily:'Geist Mono,monospace', color:'#34d399' }}>{tweaks[key]}{unit}</span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={tweaks[key]}
+        onChange={e => {
+          const val = Number(e.target.value);
+          const next = {...tweaks, [key]: val};
+          setTweaks(next);
+          window.parent.postMessage({ type:'__edit_mode_set_keys', edits:{ [key]: val } }, '*');
+        }}
+        style={{ width:'100%', accentColor:'#10b981', cursor:'pointer' }}/>
+    </div>
+  );
+  return (
+    <div style={{ position:'fixed', bottom:20, right:20, zIndex:1000, width:220,
+      background:'#0e1010', border:'1px solid rgba(16,185,129,0.18)',
+      borderRadius:10, padding:'14px 16px', boxShadow:'0 8px 32px rgba(0,0,0,0.7)',
+      fontFamily:'Geist,sans-serif' }}>
+      <div style={{ fontSize:12, fontWeight:600, color:'#e0e8e4', marginBottom:14,
+        letterSpacing:'0.04em', textTransform:'uppercase' }}>Tweaks</div>
+      {row('Accent opacity', 'accentOpacity', 3, 20, 1, '%')}
+      {row('Gradient bloom', 'gradientBloom', 0, 18, 1, '%')}
+      {row('Editor font size', 'fontSize', 13, 22, 1, 'px')}
+      {row('Sidebar width', 'sidebarWidth', 140, 380, 4, 'px')}
+    </div>
+  );
+}
+
+/* ─── Palette ─── */
+const C = {
+  base:    '#080909',
+  s1:      '#0e1010',
+  s2:      '#141616',
+  s3:      '#1a1d1c',
+  s4:      '#202424',
+  border:  'rgba(16,185,129,0.07)',
+  borderMid: 'rgba(16,185,129,0.14)',
+  fg1:     '#e6ede9',
+  fg2:     '#8a9e94',
+  fg3:     '#4a5c54',
+  accent:  '#10b981',
+  accentLt:'#34d399',
+  glow:    'rgba(16,185,129,0.12)',
+};
+
+/* ─── Tiny SVG icons ─── */
+const paths = {
+  chevron:   'M9 18l6-6-6-6',
+  chevronD:  'M6 9l6 6 6-6',
+  file:      'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z M14 2v6h6',
+  folder:    'M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z',
+  folderO:   'M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z',
+  search:    'M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z',
+  plus:      'M12 5v14M5 12h14',
+  x:         'M18 6L6 18M6 6l12 12',
+  hash:      'M4 9h16M4 15h16M10 3L8 21M16 3l-2 18',
+  video:     'M23 7l-7 5 7 5V7z M1 5h15v14H1z',
+  user:      'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2 M12 11a4 4 0 100-8 4 4 0 000 8z',
+  settings:  'M12 15a3 3 0 100-6 3 3 0 000 6z M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z',
+  wand:      'M15 4V2 M15 16v-2 M8 9h2 M20 9h2 M17.8 11.8L19 13 M15 9h.01 M17.8 6.2L19 5 M3 21l9-9 M12.2 6.2L11 5',
+  flame:     'M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z',
+  bold:      'M6 4h8a4 4 0 010 8H6z M6 12h9a4 4 0 010 8H6z',
+  italic:    'M19 4h-9 M14 20H5 M15 4L9 20',
+  code:      'M16 18l6-6-6-6 M8 6L2 12l6 6',
+  list:      'M8 6h13 M8 12h13 M8 18h13 M3 6h.01 M3 12h.01 M3 18h.01',
+  mic:       'M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z M19 10v2a7 7 0 01-14 0v-2 M12 19v4 M8 23h8',
+  micOff:    'M1 1l22 22 M9 9v3a3 3 0 005.12 2.12M15 9.34V4a3 3 0 00-5.94-.6 M17 16.95A7 7 0 015 12v-2m14 0v2a7 7 0 01-.11 1.23 M12 19v4 M8 23h8',
+  send:      'M22 2L11 13 M22 2L15 22 11 13 2 9 22 2',
+  graph:     'M12 20h9 M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z',
+};
+
+const Ico = ({ n, size=14, color, style={} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color||C.fg2} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <path d={paths[n]}/>
+  </svg>
+);
+
+/* ─── File tree data ─── */
+const VAULT = [
+  { id:'f-cs', name:'Computer Science', open:true, notes:[
+    { id:'n-sort', name:'Sorting Algorithms', active:true },
+    { id:'n-graph', name:'Graph Theory' },
+    { id:'n-dp', name:'Dynamic Programming' },
+  ], sub:[
+    { id:'f-os', name:'Operating Systems', open:false, notes:[
+      { id:'n-sched', name:'Process Scheduling' },
+      { id:'n-mem', name:'Memory Management' },
+    ], sub:[] },
+  ]},
+  { id:'f-math', name:'Mathematics', open:false, notes:[
+    { id:'n-linalg', name:'Linear Algebra' },
+    { id:'n-prob', name:'Probability' },
+  ], sub:[] },
+  { id:'f-research', name:'Research', open:false, notes:[
+    { id:'n-paper1', name:'Attention is All You Need' },
+  ], sub:[] },
+];
+
+const NOTE_CONTENT = {
+  'n-sort': {
+    title: 'Sorting Algorithms',
+    tags: ['cs', 'algorithms', 'complexity'],
+    body: `## Overview
+
+Sorting algorithms arrange elements in a specific order. Choosing the right one depends on data size, memory constraints, and whether stability matters.
+
+## Merge Sort
+
+**Time:** O(n log n) in all cases — best, average, worst.
+**Space:** O(n) auxiliary — not in-place.
+
+The array is recursively halved, then merged back in sorted order. The merge step is O(n) per level, and there are log n levels.
+
+\`\`\`python
+def merge_sort(arr):
+    if len(arr) <= 1:
+        return arr
+    mid = len(arr) // 2
+    left  = merge_sort(arr[:mid])
+    right = merge_sort(arr[mid:])
+    return merge(left, right)
+\`\`\`
+
+## Quick Sort
+
+**Time:** O(n log n) average, O(n²) worst case.
+**Space:** O(log n) call stack.
+
+Chooses a pivot and partitions the array around it. Worst case hits with a sorted array and poor pivot selection.
+
+> **Tip:** Use randomised pivot or median-of-three to avoid O(n²) in practice.
+
+## Comparison
+
+| Algorithm | Best | Avg | Worst | Space | Stable |
+|---|---|---|---|---|---|
+| Merge Sort | n log n | n log n | n log n | O(n) | ✓ |
+| Quick Sort | n log n | n log n | n² | O(log n) | ✗ |
+| Heap Sort | n log n | n log n | n log n | O(1) | ✗ |
+| Tim Sort | n | n log n | n log n | O(n) | ✓ |`,
+  },
+  'n-graph': {
+    title: 'Graph Theory',
+    tags: ['cs', 'graphs', 'traversal'],
+    body: `## Fundamentals
+
+A graph **G = (V, E)** consists of a set of vertices V and edges E.
+
+## Traversal algorithms
+
+**BFS** (Breadth-First Search) — explores level by level using a queue.
+Time: O(V + E). Good for shortest path in unweighted graphs.
+
+**DFS** (Depth-First Search) — goes deep before backtracking, uses a stack.
+Time: O(V + E). Good for cycle detection, topological sort.`,
+  },
+};
+
+/* ─── Tabs ─── */
+const INITIAL_TABS = [
+  { id:'n-sort',  name:'Sorting Algorithms' },
+  { id:'n-graph', name:'Graph Theory' },
+];
+
+/* ─── Club/Room data ─── */
+const CLUBS = [
+  { id:'cs',  name:'CS Study Group',   color:'#10b981', initials:'CS' },
+  { id:'ml',  name:'ML Research',      color:'#3b82f6', initials:'ML' },
+];
+
+const ROOM_MSGS = [
+  { user:'Arjun M.', text:'Can someone share their notes on Dijkstra?', mine:false },
+  { user:'Me', text:'Just linked them in the folder — Sorting Algorithms has a section on it', mine:true },
+  { user:'Riya S.', text:'Thanks! Also can we go over heaps today?', mine:false },
+];
+
+/* ═══════════════════════════════════════
+   COMPONENT: Left Ribbon
+══════════════════════════════════════ */
+function Ribbon({ view, setView }) {
+  const items = [
+    { id:'notes',   icon:'file'  },
+    { id:'clubs',   icon:'hash'  },
+    { id:'room',    icon:'video' },
+    { id:'profile', icon:'user'  },
+  ];
+  return (
+    <div style={{ width:44, background:C.s1, borderRight:`1px solid ${C.border}`,
+      display:'flex', flexDirection:'column', alignItems:'center', padding:'10px 0', gap:2, flexShrink:0 }}>
+      {/* Logo mark */}
+      <div style={{ width:28, height:28, borderRadius:7, marginBottom:10,
+        background:'linear-gradient(135deg,#10b981,#059669)',
+        display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+        boxShadow:'0 0 12px rgba(16,185,129,0.35)' }}>
+        <span style={{ fontSize:13, fontWeight:800, color:'#fff', letterSpacing:'-0.04em' }}>S</span>
+      </div>
+      {items.map(it=>(
+        <button key={it.id} title={it.id} onClick={()=>setView(it.id)}
+          style={{ width:32, height:32, borderRadius:7, border:'none', cursor:'pointer',
+            background: view===it.id ? 'rgba(16,185,129,0.14)' : 'transparent',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            transition:'all 0.12s' }}>
+          <Ico n={it.icon} size={16} color={view===it.id ? C.accentLt : C.fg3}/>
+        </button>
+      ))}
+      <div style={{ flex:1 }}/>
+      <button style={{ width:32, height:32, borderRadius:7, border:'none', cursor:'pointer',
+        background:'transparent', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <Ico n="settings" size={15} color={C.fg3}/>
+      </button>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   COMPONENT: File Explorer Sidebar
+══════════════════════════════════════ */
+function FileSidebar({ activeNote, setActiveNote, openTabs, setOpenTabs, width=220 }) {
+  const [openFolders, setOpenFolders] = useState(new Set(['f-cs']));
+  const [search, setSearch] = useState('');
+  const searchRef = useRef(null);
+
+  const toggleFolder = id => setOpenFolders(s => {
+    const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n;
+  });
+
+  const openNote = (note) => {
+    setActiveNote(note.id);
+    if (!openTabs.find(t=>t.id===note.id)) {
+      setOpenTabs(ts=>[...ts, { id:note.id, name:note.name }]);
+    }
+  };
+
+  const renderFolder = (folder, depth=0) => {
+    const isOpen = openFolders.has(folder.id);
+    const pl = 8 + depth*14;
+    return (
+      <div key={folder.id}>
+        <div onClick={()=>toggleFolder(folder.id)}
+          style={{ display:'flex', alignItems:'center', gap:5, padding:`3px 8px 3px ${pl}px`,
+            cursor:'pointer', borderRadius:4, fontSize:12.5, color:C.fg2,
+            background:'transparent', userSelect:'none' }}
+          onMouseEnter={e=>e.currentTarget.style.background=C.s3}
+          onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+          <Ico n={isOpen?'chevronD':'chevron'} size={11} color={C.fg3} style={{flexShrink:0}}/>
+          <Ico n="folder" size={12} color={isOpen?C.accentLt:C.fg3} style={{flexShrink:0}}/>
+          <span style={{ flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{folder.name}</span>
+        </div>
+        {isOpen && (
+          <div>
+            {folder.sub?.map(s=>renderFolder(s, depth+1))}
+            {folder.notes?.filter(n=>!search||n.name.toLowerCase().includes(search.toLowerCase())).map(note=>(
+              <div key={note.id} onClick={()=>openNote(note)}
+                style={{ display:'flex', alignItems:'center', gap:5, padding:`3px 8px 3px ${pl+16}px`,
+                  cursor:'pointer', borderRadius:4, fontSize:12.5,
+                  color: activeNote===note.id ? C.accentLt : C.fg2,
+                  background: activeNote===note.id ? 'rgba(16,185,129,0.12)' : 'transparent',
+                  borderLeft: activeNote===note.id ? `2px solid ${C.accent}` : '2px solid transparent',
+                  userSelect:'none' }}
+                onMouseEnter={e=>{ if(activeNote!==note.id) e.currentTarget.style.background=C.s3; }}
+                onMouseLeave={e=>{ if(activeNote!==note.id) e.currentTarget.style.background='transparent'; }}>
+                <Ico n="file" size={11} color={activeNote===note.id?C.accent:C.fg3} style={{flexShrink:0}}/>
+                <span style={{ flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{note.name}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ width, background:C.s1, borderRight:`1px solid ${C.border}`,
+      display:'flex', flexDirection:'column', flexShrink:0, overflow:'hidden', transition:'width 0.05s' }}>
+      {/* Header */}
+      <div style={{ padding:'10px 10px 6px', borderBottom:`1px solid ${C.border}` }}>
+        <div style={{ fontSize:11, fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase',
+          color:C.fg3, marginBottom:7 }}>Vault</div>
+        {/* Search */}
+        <div style={{ display:'flex', alignItems:'center', gap:6, background:C.s2,
+          border:`1px solid ${C.border}`, borderRadius:6, padding:'5px 9px' }}>
+          <Ico n="search" size={12} color={C.fg3}/>
+          <input ref={searchRef} value={search} onChange={e=>setSearch(e.target.value)}
+            placeholder="Search…"
+            style={{ background:'transparent', border:'none', outline:'none', width:'100%',
+              fontSize:12, color:C.fg1, fontFamily:'Geist,sans-serif' }}/>
+        </div>
+      </div>
+      {/* Tree */}
+      <div style={{ flex:1, overflowY:'auto', padding:'6px 4px' }}>
+        {VAULT.map(f=>renderFolder(f))}
+      </div>
+      {/* Footer */}
+      <div style={{ padding:'8px 10px', borderTop:`1px solid ${C.border}`,
+        display:'flex', alignItems:'center', gap:6 }}>
+        <button style={{ display:'flex', alignItems:'center', gap:5, background:'transparent',
+          border:'none', cursor:'pointer', fontSize:11, color:C.fg3, padding:'3px 4px', borderRadius:4 }}
+          onMouseEnter={e=>e.currentTarget.style.color=C.fg2}
+          onMouseLeave={e=>e.currentTarget.style.color=C.fg3}>
+          <Ico n="plus" size={12} color="inherit"/>
+          New note
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   COMPONENT: Editor Toolbar
+══════════════════════════════════════ */
+function EditorToolbar({ onAI }) {
+  const tools = [
+    { icon:'bold', label:'Bold', shortcut:'⌘B' },
+    { icon:'italic', label:'Italic', shortcut:'⌘I' },
+    { icon:'code', label:'Code', shortcut:'⌘E' },
+    null,
+    { icon:'list', label:'List', shortcut:'⌘⇧7' },
+  ];
+  return (
+    <div style={{ display:'flex', alignItems:'center', gap:2, padding:'0 12px',
+      height:38, borderBottom:`1px solid ${C.border}`, background:`${C.s1}cc`,
+      backdropFilter:'blur(8px)', flexShrink:0, overflow:'hidden' }}>
+      {tools.map((t,i)=>t===null
+        ? <div key={i} style={{ width:1, height:14, background:C.border, margin:'0 4px' }}/>
+        : (
+          <button key={t.icon} title={`${t.label} ${t.shortcut}`}
+            style={{ padding:'3px 7px', border:'none', cursor:'pointer', borderRadius:4,
+              background:'transparent', color:C.fg3, display:'flex', alignItems:'center' }}
+            onMouseEnter={e=>{ e.currentTarget.style.background=C.s3; e.currentTarget.querySelector('svg').style.stroke=C.fg2; }}
+            onMouseLeave={e=>{ e.currentTarget.style.background='transparent'; e.currentTarget.querySelector('svg').style.stroke=C.fg3; }}>
+            <Ico n={t.icon} size={13}/>
+          </button>
+        )
+      )}
+      <div style={{ flex:1 }}/>
+      <button onClick={onAI}
+        style={{ display:'flex', alignItems:'center', gap:5, padding:'4px 10px',
+          background:'rgba(16,185,129,0.08)', border:`1px solid rgba(16,185,129,0.2)`,
+          borderRadius:5, cursor:'pointer', fontSize:11.5, fontWeight:500, color:C.accentLt,
+          fontFamily:'Geist,sans-serif', transition:'all 0.12s' }}
+        onMouseEnter={e=>e.currentTarget.style.background='rgba(16,185,129,0.15)'}
+        onMouseLeave={e=>e.currentTarget.style.background='rgba(16,185,129,0.08)'}>
+        <Ico n="wand" size={12} color={C.accentLt}/>
+        Refine with AI
+      </button>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   COMPONENT: Note Editor
+══════════════════════════════════════ */
+function NoteEditor({ noteId, showAI, setShowAI, fontSize=16 }) {
+  const note = NOTE_CONTENT[noteId] || NOTE_CONTENT['n-sort'];
+  const [wordCount] = useState(() => note.body.split(/\s+/).length);
+
+  // Parse markdown-ish into JSX for display
+  const renderBody = (text) => {
+    const lines = text.split('\n');
+    const out = [];
+    let inCode = false, codeLines = [];
+
+    lines.forEach((line, i) => {
+      if (line.startsWith('```')) {
+        if (!inCode) { inCode = true; codeLines = []; return; }
+        out.push(<pre key={`code-${i}`}>{codeLines.join('\n')}</pre>);
+        inCode = false; codeLines = []; return;
+      }
+      if (inCode) { codeLines.push(line); return; }
+
+      if (line.startsWith('## '))       out.push(<h2 key={i}>{line.slice(3)}</h2>);
+      else if (line.startsWith('### ')) out.push(<h3 key={i}>{line.slice(4)}</h3>);
+      else if (line.startsWith('> '))   out.push(<blockquote key={i}>{line.slice(2)}</blockquote>);
+      else if (line.startsWith('- ') || line.startsWith('**')) {
+        const rich = line.replace(/\*\*(.*?)\*\*/g, (_,m)=>`<strong>${m}</strong>`)
+                         .replace(/`(.*?)`/g, (_,m)=>`<code>${m}</code>`)
+                         .replace(/^- /,'');
+        out.push(<p key={i} dangerouslySetInnerHTML={{__html: rich}}/>);
+      }
+      else if (line.startsWith('| ')) {
+        // simple table row skip
+      }
+      else if (line.trim()) {
+        const rich = line.replace(/\*\*(.*?)\*\*/g, (_,m)=>`<strong>${m}</strong>`)
+                         .replace(/`(.*?)`/g, (_,m)=>`<code>${m}</code>`);
+        out.push(<p key={i} dangerouslySetInnerHTML={{__html: rich}}/>);
+      }
+    });
+    return out;
+  };
+
+  return (
+    <div style={{ flex:1, display:'flex', minWidth:0, position:'relative' }}>
+      <div style={{ flex:1, overflowY:'auto', display:'flex', justifyContent:'center' }}>
+        <div style={{ width:'100%', maxWidth:720, padding:'48px 56px 80px' }}>
+          {/* Tags */}
+          <div style={{ marginBottom:20, display:'flex', gap:4, flexWrap:'wrap' }}>
+            {note.tags.map(t=><span key={t} className="tag">#{t}</span>)}
+          </div>
+          {/* Title */}
+          <h1 style={{ fontSize:36, fontWeight:700, color:C.fg1, letterSpacing:'-0.025em',
+            marginBottom:32, lineHeight:1.15, fontFamily:'Geist,sans-serif' }}>{note.title}</h1>
+          {/* Body */}
+          <div className="prose-editor" style={{ fontSize }}>{renderBody(note.body)}</div>
+        </div>
+      </div>
+
+      {/* AI Refine panel */}
+      {showAI && (
+        <div style={{ width:340, background:C.s1, borderLeft:`1px solid ${C.borderMid}`,
+          display:'flex', flexDirection:'column', flexShrink:0 }}>
+          <div style={{ padding:'14px 16px', borderBottom:`1px solid ${C.border}`,
+            display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <Ico n="wand" size={14} color={C.accentLt}/>
+              <span style={{ fontSize:13, fontWeight:600, color:C.fg1 }}>AI Refinement</span>
+            </div>
+            <button onClick={()=>setShowAI(false)} style={{ background:'transparent', border:'none',
+              cursor:'pointer', padding:4, borderRadius:4, color:C.fg3 }}>
+              <Ico n="x" size={14}/>
+            </button>
+          </div>
+          <div style={{ flex:1, padding:'16px', overflowY:'auto' }}>
+            <div style={{ fontSize:12, color:C.fg3, marginBottom:14, lineHeight:1.6 }}>
+              Gemini will restructure your notes into clear study material.
+            </div>
+            <div style={{ background:'rgba(16,185,129,0.06)', border:`1px solid ${C.borderMid}`,
+              borderRadius:8, padding:'12px 14px', marginBottom:12 }}>
+              <div style={{ fontSize:11, fontWeight:600, letterSpacing:'0.05em', textTransform:'uppercase',
+                color:C.accent, marginBottom:8 }}>Refined output</div>
+              <div style={{ fontSize:13, lineHeight:1.7, color:C.fg2 }}>
+                <strong style={{color:C.fg1}}>Merge Sort</strong> — Divide-and-conquer, O(n log n) all cases.
+                Recursively splits array at midpoint; merges with O(n) pass per level.
+                <br/><br/>
+                <strong style={{color:C.fg1}}>Quick Sort</strong> — Partition-based, O(n log n) avg.
+                Worst case O(n²) with sorted input; randomised pivot mitigates this.
+              </div>
+            </div>
+            <div style={{ display:'flex', gap:8 }}>
+              <button style={{ flex:1, padding:'7px', background:C.accent, border:'none',
+                borderRadius:6, fontSize:12, fontWeight:600, color:'#fff', cursor:'pointer',
+                fontFamily:'Geist,sans-serif' }}>Accept</button>
+              <button style={{ flex:1, padding:'7px', background:'transparent', border:`1px solid ${C.border}`,
+                borderRadius:6, fontSize:12, color:C.fg2, cursor:'pointer',
+                fontFamily:'Geist,sans-serif' }}>Discard</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status bar */}
+      <div style={{ position:'absolute', bottom:0, left:0, right:showAI?340:0,
+        height:26, borderTop:`1px solid ${C.border}`, background:`${C.base}cc`,
+        backdropFilter:'blur(8px)', display:'flex', alignItems:'center', padding:'0 20px',
+        gap:16, fontSize:11, color:C.fg3, fontFamily:'Geist Mono,monospace' }}>
+        <span>TEXT</span>
+        <span>{wordCount} words</span>
+        <span style={{ flex:1 }}/>
+        <span style={{ display:'flex', alignItems:'center', gap:4, color:C.accent }}>
+          <div style={{ width:5, height:5, borderRadius:'50%', background:C.accent }}/>
+          Saved
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   SCREEN: CLUBS
+══════════════════════════════════════ */
+function ClubsScreen() {
+  const [activeClub, setActiveClub] = useState('cs');
+  const [draft, setDraft] = useState('');
+  const [msgs, setMsgs] = useState(ROOM_MSGS);
+  const send = () => {
+    if(!draft.trim()) return;
+    setMsgs(m=>[...m,{user:'Me',text:draft,mine:true}]);
+    setDraft('');
+  };
+  return (
+    <div style={{ flex:1, display:'flex', minWidth:0 }}>
+      {/* Club list */}
+      <div style={{ width:200, background:C.s1, borderRight:`1px solid ${C.border}`, padding:'12px 8px' }}>
+        <div style={{ fontSize:11, fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase',
+          color:C.fg3, padding:'0 6px', marginBottom:8 }}>Clubs</div>
+        {CLUBS.map(c=>(
+          <div key={c.id} onClick={()=>setActiveClub(c.id)}
+            style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 8px', borderRadius:6,
+              cursor:'pointer', marginBottom:2,
+              background: activeClub===c.id ? 'rgba(16,185,129,0.1)' : 'transparent',
+              borderLeft: activeClub===c.id ? `2px solid ${C.accent}` : '2px solid transparent' }}
+            onMouseEnter={e=>{ if(activeClub!==c.id) e.currentTarget.style.background=C.s2; }}
+            onMouseLeave={e=>{ if(activeClub!==c.id) e.currentTarget.style.background='transparent'; }}>
+            <div style={{ width:26, height:26, borderRadius:7, background:c.color,
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:10, fontWeight:700, color:'#fff', flexShrink:0 }}>{c.initials}</div>
+            <span style={{ fontSize:13, color: activeClub===c.id ? C.fg1 : C.fg2,
+              overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{c.name}</span>
+          </div>
+        ))}
+        <div style={{ borderTop:`1px solid ${C.border}`, margin:'12px 0 8px' }}/>
+        <div style={{ fontSize:11, fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase',
+          color:C.fg3, padding:'0 6px', marginBottom:8 }}>Rooms</div>
+        <div style={{ padding:'5px 8px', borderRadius:6, cursor:'pointer', display:'flex',
+          alignItems:'center', gap:7, background:'rgba(239,68,68,0.07)',
+          border:'1px solid rgba(239,68,68,0.15)' }}>
+          <Ico n="video" size={12} color='#f87171'/>
+          <span style={{ fontSize:12, color:'#fca5a5' }}>DSA Session</span>
+          <span style={{ marginLeft:'auto', fontSize:9, fontWeight:700,
+            background:'rgba(239,68,68,0.15)', color:'#f87171',
+            padding:'1px 5px', borderRadius:99 }}>LIVE</span>
+        </div>
+      </div>
+      {/* Chat */}
+      <div style={{ flex:1, display:'flex', flexDirection:'column' }}>
+        <div style={{ height:44, borderBottom:`1px solid ${C.border}`, display:'flex',
+          alignItems:'center', padding:'0 16px', gap:8, flexShrink:0 }}>
+          <Ico n="hash" size={14}/>
+          <span style={{ fontSize:14, fontWeight:600, color:C.fg1 }}>general</span>
+          <span style={{ fontSize:12, color:C.fg3, marginLeft:8 }}>CS Study Group</span>
+        </div>
+        <div style={{ flex:1, overflowY:'auto', padding:'20px 20px 8px', display:'flex', flexDirection:'column', gap:16 }}>
+          {msgs.map((m,i)=>(
+            <div key={i} style={{ display:'flex', justifyContent:m.mine?'flex-end':'flex-start' }}>
+              <div style={{ maxWidth:'75%' }}>
+                {!m.mine && <div style={{ fontSize:11, color:C.fg3, marginBottom:3 }}>{m.user}</div>}
+                <div style={{ padding:'8px 13px', borderRadius: m.mine?'14px 14px 4px 14px':'14px 14px 14px 4px',
+                  background: m.mine
+                    ? 'linear-gradient(135deg,#10b981,#059669)'
+                    : C.s2,
+                  border: m.mine ? 'none' : `1px solid ${C.border}`,
+                  fontSize:13.5, lineHeight:1.5,
+                  color: m.mine ? '#fff' : C.fg1 }}>
+                  {m.text}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ padding:'10px 16px', borderTop:`1px solid ${C.border}` }}>
+          <div style={{ background:C.s2, border:`1px solid ${C.borderMid}`, borderRadius:10,
+            display:'flex', alignItems:'center', gap:8, padding:'9px 13px',
+            boxShadow:'0 0 0 1px rgba(16,185,129,0.05)' }}>
+            <input value={draft} onChange={e=>setDraft(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&send()}
+              placeholder="Message #general"
+              style={{ flex:1, background:'transparent', border:'none', outline:'none',
+                color:C.fg1, fontSize:13.5, fontFamily:'Geist,sans-serif' }}/>
+            <button onClick={send} style={{ background:'transparent', border:'none', cursor:'pointer',
+              padding:4, borderRadius:5, display:'flex' }}>
+              <Ico n="send" size={14} color={draft.trim()?C.accent:C.fg3}/>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   SCREEN: PROFILE
+══════════════════════════════════════ */
+function ProfileScreen() {
+  const heatColors = [C.s3, 'rgba(16,185,129,0.2)', 'rgba(16,185,129,0.45)', C.accent, '#065f46'];
+  const cells = Array.from({length:364},()=>{const r=Math.random();return r<0.55?0:r<0.72?1:r<0.85?2:r<0.94?3:4;});
+  return (
+    <div style={{ flex:1, overflowY:'auto', padding:'40px 48px' }}>
+      <div style={{ maxWidth:660 }}>
+        {/* Header */}
+        <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:32 }}>
+          <div style={{ width:60, height:60, borderRadius:'50%', flexShrink:0,
+            background:'linear-gradient(135deg,#10b981,#059669)',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            fontSize:22, fontWeight:700, color:'#fff',
+            boxShadow:'0 0 20px rgba(16,185,129,0.3)' }}>TC</div>
+          <div>
+            <div style={{ fontSize:22, fontWeight:700, color:C.fg1, letterSpacing:'-0.01em' }}>Tushar Chauhan</div>
+            <div style={{ fontSize:13, color:C.fg3, marginTop:3 }}>Member since April 2025 · 3 clubs</div>
+          </div>
+        </div>
+        {/* Stats row */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:24 }}>
+          {[
+            { label:'Day streak', value:'7', icon:'flame', color:C.accent },
+            { label:'Longest',    value:'14 days', mono:true },
+            { label:'This month', value:'42h',     mono:true },
+          ].map((s,i)=>(
+            <div key={i} style={{ background:C.s1, border:`1px solid ${C.border}`, borderRadius:10,
+              padding:'14px 16px', background:'linear-gradient(160deg,rgba(16,185,129,0.04),transparent)' }}>
+              <div style={{ fontSize:22, fontWeight:700, color:C.fg1, letterSpacing:'-0.01em',
+                fontFamily:s.mono?'Geist Mono,monospace':'Geist,sans-serif' }}>{s.value}</div>
+              <div style={{ fontSize:11, color:C.fg3, marginTop:4 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+        {/* Heatmap */}
+        <div style={{ background:C.s1, border:`1px solid ${C.border}`, borderRadius:10,
+          padding:'16px 20px', marginBottom:16,
+          background:'linear-gradient(160deg,rgba(16,185,129,0.03),transparent)' }}>
+          <div style={{ fontSize:11, fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase',
+            color:C.fg3, marginBottom:12 }}>Activity — past year</div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(52,1fr)', gap:2 }}>
+            {cells.map((c,i)=>(
+              <div key={i} style={{ aspectRatio:1, borderRadius:2,
+                background:heatColors[c],
+                border: c===0 ? `1px solid rgba(16,185,129,0.08)` : 'none' }}/>
+            ))}
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:5, marginTop:10, justifyContent:'flex-end' }}>
+            <span style={{ fontSize:10, color:C.fg3 }}>Less</span>
+            {heatColors.map((c,i)=>(
+              <div key={i} style={{ width:10, height:10, borderRadius:2, background:c,
+                border:i===0?`1px solid rgba(16,185,129,0.1)`:'none' }}/>
+            ))}
+            <span style={{ fontSize:10, color:C.fg3 }}>More</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   SCREEN: LIVE ROOM
+══════════════════════════════════════ */
+const ROOM_PARTICIPANTS = [
+  { name:'Tushar Chauhan', role:'HOST', mic:true,  cam:true,  color:'#10b981' },
+  { name:'Arjun Mehta',    role:'',    mic:true,  cam:false, color:'#3b82f6' },
+  { name:'Riya Sharma',    role:'',    mic:false, cam:true,  color:'#8b5cf6' },
+  { name:'Karan Patel',    role:'',    mic:true,  cam:true,  color:'#f59e0b' },
+  { name:'Sneha Rao',      role:'',    mic:false, cam:false, color:'#ec4899' },
+  { name:'Dev Singh',      role:'',    mic:true,  cam:true,  color:'#06b6d4' },
+];
+
+function VideoTile({ p, large=false }) {
+  const initials = p.name.split(' ').map(w=>w[0]).join('').slice(0,2);
+  const isActive = p.mic; // simulate speaking
+  return (
+    <div style={{ position:'relative', borderRadius:10, overflow:'hidden',
+      background: p.cam ? `linear-gradient(135deg, ${p.color}22, ${p.color}08)` : C.s2,
+      border: `1px solid ${isActive ? p.color+'55' : C.border}`,
+      boxShadow: isActive ? `0 0 0 2px ${p.color}40` : 'none',
+      aspectRatio:'16/9', display:'flex', alignItems:'center', justifyContent:'center',
+      transition:'box-shadow 0.2s' }}>
+      {/* Avatar */}
+      <div style={{ width: large?64:44, height: large?64:44, borderRadius:'50%',
+        background:`linear-gradient(135deg, ${p.color}, ${p.color}99)`,
+        display:'flex', alignItems:'center', justifyContent:'center',
+        fontSize: large?22:15, fontWeight:700, color:'#fff',
+        boxShadow:`0 0 16px ${p.color}44` }}>
+        {initials}
+      </div>
+      {/* Cam-on shimmer overlay */}
+      {p.cam && (
+        <div style={{ position:'absolute', inset:0,
+          background:`radial-gradient(ellipse 80% 60% at 50% 30%, ${p.color}18, transparent 70%)` }}/>
+      )}
+      {/* Name bar */}
+      <div style={{ position:'absolute', bottom:0, left:0, right:0,
+        padding:'18px 10px 7px',
+        background:'linear-gradient(to top, rgba(0,0,0,0.65), transparent)',
+        display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+          <span style={{ fontSize:11.5, fontWeight:500, color:'rgba(255,255,255,0.9)' }}>
+            {p.name.split(' ')[0]}
+          </span>
+          {p.role && (
+            <span style={{ fontSize:9, fontWeight:700, background:`${p.color}33`,
+              color:p.color, border:`1px solid ${p.color}55`,
+              padding:'1px 5px', borderRadius:99 }}>{p.role}</span>
+          )}
+        </div>
+        {!p.mic && (
+          <div style={{ background:'rgba(239,68,68,0.25)', borderRadius:'50%', padding:4 }}>
+            <Ico n="micOff" size={10} color='#fca5a5'/>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RoomScreen({ onLeave }) {
+  const [micOn, setMicOn]     = useState(true);
+  const [camOn, setCamOn]     = useState(true);
+  const [chatOpen, setChatOpen] = useState(true);
+  const [draft, setDraft]     = useState('');
+  const [msgs, setMsgs]       = useState([
+    { user:'Arjun Mehta',  text:'Can we start with heaps?',                mine:false },
+    { user:'Riya Sharma',  text:'Sure — min-heap or max-heap first?',      mine:false },
+    { user:'Me',           text:'Let\'s do both — I\'ll share my screen',  mine:true  },
+    { user:'Karan Patel',  text:'Great, waiting 👍',                       mine:false },
+  ]);
+
+  const sendMsg = () => {
+    if (!draft.trim()) return;
+    setMsgs(m=>[...m, { user:'Me', text:draft, mine:true }]);
+    setDraft('');
+  };
+
+  // Grid layout: ≤2 → 1 col, ≤4 → 2 cols, else 3 cols
+  const count = ROOM_PARTICIPANTS.length;
+  const cols = count <= 2 ? 1 : count <= 4 ? 2 : 3;
+
+  return (
+    <div style={{ flex:1, display:'flex', flexDirection:'column', background:'#060808',
+      backgroundImage:'radial-gradient(ellipse 70% 40% at 50% 0%, rgba(16,185,129,0.06) 0%, transparent 60%)' }}>
+
+      {/* Top bar */}
+      <div style={{ height:46, borderBottom:`1px solid ${C.border}`, display:'flex',
+        alignItems:'center', padding:'0 16px', gap:10, flexShrink:0, background:C.s1 }}>
+        <button onClick={onLeave}
+          style={{ display:'flex', alignItems:'center', gap:6, background:'transparent',
+            border:'none', cursor:'pointer', color:C.fg3, fontSize:12, padding:'4px 8px',
+            borderRadius:5, fontFamily:'Geist,sans-serif' }}
+          onMouseEnter={e=>e.currentTarget.style.color=C.fg2}
+          onMouseLeave={e=>e.currentTarget.style.color=C.fg3}>
+          ← Back
+        </button>
+        <div style={{ width:1, height:14, background:C.border }}/>
+        <Ico n="video" size={14} color={C.accent}/>
+        <span style={{ fontSize:14, fontWeight:600, color:C.fg1 }}>DSA Session</span>
+        <span style={{ fontSize:10, fontWeight:700, background:'rgba(239,68,68,0.12)',
+          color:'#f87171', border:'1px solid rgba(239,68,68,0.25)',
+          borderRadius:99, padding:'2px 8px' }}>LIVE</span>
+        <div style={{ flex:1 }}/>
+        <span style={{ fontSize:12, color:C.fg3 }}>{count} participants</span>
+        <button onClick={()=>setChatOpen(v=>!v)}
+          style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 10px',
+            background: chatOpen ? 'rgba(16,185,129,0.1)' : 'transparent',
+            border:`1px solid ${chatOpen ? C.borderMid : C.border}`,
+            borderRadius:6, cursor:'pointer', fontSize:12, color: chatOpen ? C.accentLt : C.fg2,
+            fontFamily:'Geist,sans-serif' }}>
+          <Ico n="hash" size={12} color={chatOpen?C.accentLt:C.fg2}/> Chat
+        </button>
+      </div>
+
+      {/* Body */}
+      <div style={{ flex:1, display:'flex', minHeight:0 }}>
+
+        {/* Video grid */}
+        <div style={{ flex:1, padding:12, overflowY:'auto',
+          display:'grid', gridTemplateColumns:`repeat(${cols},1fr)`,
+          gap:8, alignContent:'start' }}>
+          {ROOM_PARTICIPANTS.map((p,i)=>(
+            <VideoTile key={p.name} p={i===0 ? {...p, mic:micOn, cam:camOn} : p}/>
+          ))}
+        </div>
+
+        {/* Chat panel */}
+        {chatOpen && (
+          <div style={{ width:288, borderLeft:`1px solid ${C.border}`, background:C.s1,
+            display:'flex', flexDirection:'column', flexShrink:0 }}>
+            <div style={{ padding:'10px 14px', borderBottom:`1px solid ${C.border}`,
+              fontSize:12, fontWeight:600, color:C.fg2, display:'flex', alignItems:'center', gap:6 }}>
+              <div style={{ width:6, height:6, borderRadius:'50%', background:C.accent }}/>
+              Room chat
+            </div>
+            <div style={{ flex:1, overflowY:'auto', padding:'12px 14px', display:'flex',
+              flexDirection:'column', gap:12 }}>
+              {msgs.map((m,i)=>(
+                <div key={i} style={{ display:'flex', justifyContent: m.mine ? 'flex-end' : 'flex-start' }}>
+                  <div style={{ maxWidth:'85%' }}>
+                    {!m.mine && <div style={{ fontSize:10.5, color:C.fg3, marginBottom:3 }}>{m.user}</div>}
+                    <div style={{ padding:'7px 11px',
+                      borderRadius: m.mine ? '12px 12px 3px 12px' : '12px 12px 12px 3px',
+                      background: m.mine
+                        ? 'linear-gradient(135deg,#10b981,#059669)'
+                        : C.s3,
+                      border: m.mine ? 'none' : `1px solid ${C.border}`,
+                      fontSize:13, lineHeight:1.45,
+                      color: m.mine ? '#fff' : C.fg1 }}>
+                      {m.text}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ padding:'8px 10px', borderTop:`1px solid ${C.border}` }}>
+              <div style={{ background:C.s2, border:`1px solid ${C.borderMid}`, borderRadius:8,
+                display:'flex', alignItems:'center', gap:6, padding:'7px 11px' }}>
+                <input value={draft} onChange={e=>setDraft(e.target.value)}
+                  onKeyDown={e=>e.key==='Enter'&&sendMsg()}
+                  placeholder="Message…"
+                  style={{ flex:1, background:'transparent', border:'none', outline:'none',
+                    color:C.fg1, fontSize:12.5, fontFamily:'Geist,sans-serif' }}/>
+                <button onClick={sendMsg}
+                  style={{ background:'transparent', border:'none', cursor:'pointer', display:'flex', padding:2 }}>
+                  <Ico n="send" size={13} color={draft.trim()?C.accent:C.fg3}/>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Controls bar */}
+      <div style={{ height:68, borderTop:`1px solid ${C.border}`, background:`${C.s1}ee`,
+        backdropFilter:'blur(12px)', display:'flex', alignItems:'center',
+        justifyContent:'center', gap:10, flexShrink:0 }}>
+        {[
+          { icon: micOn?'mic':'micOff', label: micOn?'Mute':'Unmute', on:micOn, toggle:()=>setMicOn(v=>!v) },
+          { icon: 'video',              label: camOn?'Stop cam':'Start cam', on:camOn, toggle:()=>setCamOn(v=>!v) },
+        ].map(ctrl=>(
+          <button key={ctrl.icon} onClick={ctrl.toggle}
+            style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3,
+              background: ctrl.on ? C.s2 : 'rgba(239,68,68,0.1)',
+              border:`1px solid ${ctrl.on ? C.border : 'rgba(239,68,68,0.25)'}`,
+              borderRadius:10, padding:'8px 18px', cursor:'pointer',
+              color: ctrl.on ? C.fg2 : '#fca5a5', minWidth:76, transition:'all 0.12s' }}>
+            <Ico n={ctrl.icon} size={18} color={ctrl.on?C.fg2:'#fca5a5'}/>
+            <span style={{ fontSize:10, fontFamily:'Geist,sans-serif', fontWeight:500 }}>{ctrl.label}</span>
+          </button>
+        ))}
+        <button onClick={onLeave}
+          style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3,
+            background:'rgba(239,68,68,0.12)', border:'1px solid rgba(239,68,68,0.3)',
+            borderRadius:10, padding:'8px 18px', cursor:'pointer', color:'#fca5a5', minWidth:76 }}>
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#fca5a5" strokeWidth={1.75} strokeLinecap="round">
+            <path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.42 19.42 0 013.43 9.19 19.79 19.79 0 01.36.5 2 2 0 012.34 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.32 9.9"/>
+          </svg>
+          <span style={{ fontSize:10, fontFamily:'Geist,sans-serif', fontWeight:500 }}>Leave</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   ROOT APP
+══════════════════════════════════════ */
+function App() {
+  const [view, setView] = useState('notes');
+  const [activeNote, setActiveNote] = useState('n-sort');
+  const [openTabs, setOpenTabs] = useState(INITIAL_TABS);
+  const [showAI, setShowAI] = useState(false);
+  const [showTweaks, setShowTweaks] = useState(false);
+  const [tweaks, setTweaks] = useState(TWEAK_DEFAULTS);
+
+  // Sidebar resize
+  const [sidebarWidth, setSidebarWidth] = useState(tweaks.sidebarWidth);
+  const dragging = useRef(false);
+  const dragStart = useRef(0);
+  const widthStart = useRef(0);
+
+  // Sync sidebarWidth from tweaks panel
+  useEffect(() => { setSidebarWidth(tweaks.sidebarWidth); }, [tweaks.sidebarWidth]);
+
+  // Drag handle logic
+  const onDragStart = useCallback((e) => {
+    dragging.current = true;
+    dragStart.current = e.clientX;
+    widthStart.current = sidebarWidth;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, [sidebarWidth]);
+
+  useEffect(() => {
+    const onMove = (e) => {
+      if (!dragging.current) return;
+      const delta = e.clientX - dragStart.current;
+      const next = Math.max(0, Math.min(480, widthStart.current + delta));
+      setSidebarWidth(next); // pure drag — no snapping
+    };
+    const onUp = () => {
+      if (!dragging.current) return;
+      dragging.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+  }, []);
+
+  // Tweaks host protocol
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.data?.type === '__activate_edit_mode')   setShowTweaks(true);
+      if (e.data?.type === '__deactivate_edit_mode') setShowTweaks(false);
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type:'__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  const closeTab = (id, e) => {
+    e.stopPropagation();
+    const next = openTabs.filter(t=>t.id!==id);
+    setOpenTabs(next);
+    if (activeNote===id) setActiveNote(next.length?next[next.length-1].id:null);
+  };
+
+  const bloom = tweaks.gradientBloom / 100;
+  const accent = tweaks.accentOpacity / 100;
+
+  return (
+    <div style={{ display:'flex', height:'100vh', overflow:'hidden',
+      background: C.base,
+      backgroundImage: `radial-gradient(ellipse 80% 35% at 50% -10%, rgba(16,185,129,${bloom}) 0%, transparent 60%)` }}>
+
+      <Ribbon view={view} setView={setView}/>
+
+      {/* Notes sidebar + drag handle */}
+      {view === 'notes' && (
+        <>
+          {sidebarWidth > 0 && (
+            <FileSidebar activeNote={activeNote} setActiveNote={setActiveNote}
+              openTabs={openTabs} setOpenTabs={setOpenTabs} width={sidebarWidth}/>
+          )}
+          {/* Drag handle — always present in notes view */}
+          <div onMouseDown={onDragStart}
+            style={{ width:5, flexShrink:0, cursor:'col-resize', position:'relative',
+              background:'transparent', zIndex:10 }}
+            onMouseEnter={e=>e.currentTarget.style.background='rgba(16,185,129,0.22)'}
+            onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+            <div style={{ position:'absolute', top:'50%', left:'50%',
+              transform:'translate(-50%,-50%)',
+              width:3, height:28, borderRadius:2, background:'rgba(16,185,129,0.18)' }}/>
+          </div>
+        </>
+      )}
+
+      <div style={{ flex:1, display:'flex', flexDirection:'column', minWidth:0 }}>
+        {/* Tab bar */}
+        {view === 'notes' && (
+          <div style={{ display:'flex', alignItems:'stretch', height:36,
+            borderBottom:`1px solid ${C.border}`, background:C.s1,
+            overflowX:'auto', flexShrink:0 }}>
+            {openTabs.map(tab=>(
+              <div key={tab.id} onClick={()=>setActiveNote(tab.id)}
+                style={{ display:'flex', alignItems:'center', gap:6, padding:'0 14px',
+                  cursor:'pointer', fontSize:12.5, flexShrink:0,
+                  borderRight:`1px solid ${C.border}`,
+                  color: activeNote===tab.id ? C.fg1 : C.fg3,
+                  background: activeNote===tab.id ? C.base : 'transparent',
+                  borderBottom: activeNote===tab.id ? `2px solid ${C.accent}` : '2px solid transparent',
+                  transition:'all 0.1s' }}>
+                <Ico n="file" size={11} color={activeNote===tab.id?C.accent:C.fg3}/>
+                <span>{tab.name}</span>
+                <button onClick={e=>closeTab(tab.id,e)}
+                  style={{ background:'transparent', border:'none', cursor:'pointer',
+                    padding:'1px 2px', borderRadius:3, color:C.fg3, display:'flex',
+                    marginLeft:2, lineHeight:1 }}>
+                  <Ico n="x" size={10}/>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Screen content */}
+        <div style={{ flex:1, display:'flex', minHeight:0 }}>
+          {view==='notes' && (
+            <div style={{ flex:1, display:'flex', flexDirection:'column', minWidth:0 }}>
+              <EditorToolbar onAI={()=>setShowAI(v=>!v)}/>
+              {activeNote
+                ? <NoteEditor noteId={activeNote} showAI={showAI} setShowAI={setShowAI} fontSize={tweaks.fontSize}/>
+                : <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center',
+                    color:C.fg3, fontSize:13 }}>Open a note to start editing</div>
+              }
+            </div>
+          )}
+          {view==='clubs'   && <ClubsScreen/>}
+          {view==='room'    && <RoomScreen onLeave={()=>setView('clubs')}/>}
+          {view==='profile' && <ProfileScreen/>}
+        </div>
+      </div>
+
+      {showTweaks && <TweaksPanel tweaks={tweaks} setTweaks={setTweaks}/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

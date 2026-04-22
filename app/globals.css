@@ -1,8 +1,42 @@
 @import "tailwindcss";
 
+/* ============================================================
+   SuperStudy — Black-dominant, emerald-accent (match design HTML)
+   ============================================================ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Near-black surfaces (from design/index.html palette) */
+  --bg-base:      #080909;
+  --bg-surface-1: #0e1010;
+  --bg-surface-2: #141616;
+  --bg-surface-3: #1a1d1c;
+  --bg-surface-4: #202424;
+
+  /* Emerald — only as accent, very subtle borders/tints */
+  --border:       rgba(16,185,129,0.07);
+  --border-mid:   rgba(16,185,129,0.14);
+  --border-focus: #10b981;
+
+  /* Foreground (cool off-white, muted green-grey for secondary) */
+  --fg-1:         #e6ede9;
+  --fg-2:         #8a9e94;
+  --fg-3:         #4a5c54;
+
+  --accent:       #10b981;
+  --accent-lt:    #34d399;
+  --color-destructive: #ef4444;
+
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-xl:   12px;
+  --radius-full: 9999px;
+
+  --shadow-sm:   0 1px 2px rgba(0,0,0,0.50);
+  --shadow-md:   0 4px 12px rgba(0,0,0,0.60);
+  --shadow-lg:   0 8px 32px rgba(0,0,0,0.70);
+
+  --background: var(--bg-base);
+  --foreground: var(--fg-1);
 }
 
 @theme inline {
@@ -12,15 +46,58 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html, body {
+  background: var(--bg-base);
+  color: #c8d8d2;
+  font-family: var(--font-geist-sans), 'Geist', ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* No gradient bloom — keep black dominant */
+  background-image: none;
 }
+
+/* Obsidian-style thin scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.15); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(16,185,129,0.3); }
+
+/* Tag chip */
+.tag {
+  display: inline-block;
+  font-size: 11px;
+  color: #34d399;
+  background: rgba(52,211,153,0.1);
+  border: 1px solid rgba(52,211,153,0.2);
+  border-radius: 99px;
+  padding: 1px 8px;
+  margin: 0 2px 2px 0;
+}
+
+/* Prose editor */
+.prose-editor { font-size: 16px; line-height: 1.8; color: #b8cec4; }
+.prose-editor h1 { font-size: 2em; font-weight: 700; letter-spacing: -0.025em; margin: 0 0 .5em; color: #e0e8e4; }
+.prose-editor h2 { font-size: 1.4em; font-weight: 600; margin: 1.6em 0 .5em; color: #ccd9d4; letter-spacing: -0.01em; }
+.prose-editor h3 { font-size: 1.15em; font-weight: 600; margin: 1.4em 0 .4em; color: #b8cec4; }
+.prose-editor p  { margin: 0 0 1em; }
+.prose-editor ul, .prose-editor ol { padding-left: 1.4em; margin: 0 0 1em; }
+.prose-editor li { margin-bottom: .3em; }
+.prose-editor code { font-family: var(--font-geist-mono), monospace; font-size: .85em; background: rgba(16,185,129,0.07); border: 1px solid rgba(16,185,129,0.12); border-radius: 4px; padding: 1px 5px; color: #6ee7b7; }
+.prose-editor pre  { font-family: var(--font-geist-mono), monospace; font-size: .85em; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 16px; color: #a3b8b0; overflow-x: auto; margin: 0 0 1em; line-height: 1.65; }
+.prose-editor blockquote { border-left: 3px solid rgba(16,185,129,0.3); padding-left: 1em; color: #6a8a7e; margin: 0 0 1em; }
+.prose-editor strong { color: #ddeae4; font-weight: 600; }
+.prose-editor a { color: #34d399; text-decoration: none; border-bottom: 1px solid rgba(52,211,153,0.25); }
+.prose-editor hr { border: none; border-top: 1px solid rgba(16,185,129,0.12); margin: 1.5em 0; }
+
+/* TipTap ProseMirror */
+.ProseMirror { outline: none; color: #c8d8d2; }
+.ProseMirror h1 { color: #e0e8e4; }
+.ProseMirror h2, .ProseMirror h3 { color: #ccd9d4; }
+.ProseMirror p { color: #b8cec4; }
+.ProseMirror code { background: rgba(16,185,129,0.07); border: 1px solid rgba(16,185,129,0.12); border-radius: 4px; padding: 1px 5px; color: #6ee7b7; font-family: var(--font-geist-mono), monospace; }
+.ProseMirror pre { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; color: #a3b8b0; padding: 14px 16px; }
+.ProseMirror blockquote { border-left: 3px solid rgba(16,185,129,0.3); padding-left: 12px; color: #6a8a7e; }
+.ProseMirror table { border-collapse: collapse; width: 100%; }
+.ProseMirror th, .ProseMirror td { border: 1px solid var(--border); padding: 6px 10px; }
+.ProseMirror th { background: var(--bg-surface-2); }
